@@ -12,6 +12,7 @@
   "author": "Charlotte Griffin",
   "license": "ISC",
   "dependencies": {
+    "lucide-react": "^0.503.0",
     "react": "^19.1.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",

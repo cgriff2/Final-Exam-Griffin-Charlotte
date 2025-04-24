@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { Task } from './TaskContext';
+import { Task, useTasks } from './TaskContext';
 
 interface TaskFormProps {
   task: Task;
   closeForm: () => void;
+  onDelete?: () => void;
+  updateTask: (updatedTask: Task) => void;
+  addTask: (addTask: Task) => void;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, closeForm }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ task, closeForm, onDelete, updateTask, addTask }) => {
   const [formTask, setFormTask] = useState(task);
+  const { categories } = useTasks();
+  console.log('Categories:', categories);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -16,8 +21,25 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, closeForm }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Call your task saving logic here
+    if (!formTask.title.trim() || !formTask.date) {
+      alert('Please enter a title and date.');
+      return;
+    }
+
+    if (task?.taskId) {
+      updateTask(formTask);
+    } else {
+      addTask({ ...formTask, taskId: crypto.randomUUID() });
+    }
+
     closeForm();
+  };
+
+  const handleDelete = () => {
+    const confirmed = window.confirm("Are you sure you want to delete this task?");
+    if (confirmed && onDelete) {
+      onDelete();
+    }
   };
 
   return (
@@ -70,13 +92,31 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, closeForm }) => {
         </select>
       </label>
 
+      <label className="flex flex-col font-semibold">
+        Category
+        <input
+          list="category-options"
+          name="category"
+          value={formTask.category || ''}
+          onChange={handleChange}
+          className="appearance-none mt-1 px-3 py-2 border border-gray-300 rounded"
+        />
+        <datalist id="category-options">
+          {categories.map((cat, i) => (
+            <option key={i} value={cat} />
+          ))}
+        </datalist>
+      </label>
+
       <div className="flex justify-between gap-4 mt-2">
         <button
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
         >
           Save
         </button>
+        
         <button
           type="button"
           onClick={closeForm}
@@ -85,6 +125,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, closeForm }) => {
           Cancel
         </button>
       </div>
+
+      {onDelete && (
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="text-red-600 hover:text-red-800 font-semibold mt-4"
+        >
+          Delete Task
+        </button>
+      )}
     </form>
   );
 };

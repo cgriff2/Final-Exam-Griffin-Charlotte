@@ -4,10 +4,11 @@ import TaskForm from './TaskForm';
 import TaskItem from './TaskItem';
 
 const PlannerApp = () => {
-  const { tasks, updateTask } = useTasks();
+  const { tasks, addTask, updateTask, deleteTask } = useTasks();
   const [currentWeekOffset, setWeekOffset] = useState(0);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showCompleted, setShowCompleted] = useState(true);
+  const [sortMode, setSortMode] = useState<'title' | 'priority'>('title');
 
   const today = new Date();
   const weekStart = new Date(today.setDate(today.getDate() - today.getDay() + currentWeekOffset * 7));
@@ -50,6 +51,11 @@ const PlannerApp = () => {
         <span className="font-medium">Show Completed Tasks</span>
       </label>
 
+      <select value={sortMode} onChange={(e) => setSortMode(e.target.value as any)}>
+        <option value="title">Sort by Title</option>
+        <option value="priority">Sort by Priority</option>
+      </select>
+
       <div className="grid grid-cols-7 gap-4 mt-4">
         {weekDates.map(date => {
           const dayTasks = tasks
@@ -58,6 +64,11 @@ const PlannerApp = () => {
           const dateObj = new Date(date);
           const label = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
           const weekday = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+          const sortedTasks = [...dayTasks].sort((a, b) => {
+            if (sortMode === 'title') return a.title.localeCompare(b.title);
+            if (sortMode === 'priority') return a.priority.localeCompare(b.priority);
+            return 0;
+          });
 
           return (
             <div
@@ -69,7 +80,7 @@ const PlannerApp = () => {
                 <div className="text-sm text-gray-500">{weekday}</div>
               </div>
               <ul className="flex-grow space-y-2">
-                {dayTasks.map(task => (
+                {sortedTasks.map(task => (
                   <TaskItem
                     key={task.taskId}
                     taskId={task.taskId}
@@ -78,6 +89,7 @@ const PlannerApp = () => {
                     priority={task.priority}
                     onToggleCompleted={() => handleToggleComplete(task)}
                     onEdit={() => setEditingTask(task)}
+                    onDelete={() => deleteTask(task.taskId)}
                   />
                 ))}
               </ul>
@@ -105,7 +117,18 @@ const PlannerApp = () => {
       )}
 
       {editingTask && (
-        <TaskForm task={editingTask} closeForm={() => setEditingTask(null)} />
+        <TaskForm
+          task={editingTask}
+          closeForm={() => setEditingTask(null)}
+          onDelete={() => {
+            if (editingTask) {
+              deleteTask(editingTask.taskId);
+              setEditingTask(null);
+            }
+          }}
+          updateTask={updateTask}
+          addTask={addTask}
+        />
       )}
     </div>
   );
